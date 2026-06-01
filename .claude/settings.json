@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew test *)",
+      "Bash(curl -s \"https://www.opinet.co.kr/api/avgAllPrice.do?code=F260531627&out=json\")",
+      "Bash(curl -s \"https://www.opinet.co.kr/api/dateAvgRecentPrice.do?code=F260531627&out=json&date=20240101\")",
+      "Bash(./gradlew bootRun)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(curl -s http://localhost:8080/api/v1/admin/external-status)",
+      "Bash(python3 -m json.tool)",
+      "Bash(pkill -f \"PriceMarketApplication\")",
+      "Bash(pkill -f \"bootRun\")",
+      "Bash(curl -s \"https://ecos.bok.or.kr/api/StatisticSearch/RZLY4Q1Q3Q0YRYPO8AZK/json/kr/1/10/901Y009/M/202501/202503/0\")",
+      "Bash(curl -s \"https://ecos.bok.or.kr/api/StatisticSearch/RZLY4Q1Q3Q0YRYPO8AZK/json/kr/1/10/731Y001/D/20250520/20250530/0000001\")",
+      "Bash(curl -s \"https://ecos.bok.or.kr/api/StatisticSearch/RZLY4Q1Q3Q0YRYPO8AZK/json/kr/1/5/722Y001/D/20250501/20250530/0101000\")",
+      "Bash(curl -s \"https://ecos.bok.or.kr/api/StatisticSearch/RZLY4Q1Q3Q0YRYPO8AZK/json/kr/1/5/404Y014/M/202501/202503\")",
+      "Bash(curl -s \"https://ecos.bok.or.kr/api/StatisticSearch/RZLY4Q1Q3Q0YRYPO8AZK/json/kr/1/5/404Y014/M/202501/202503/*AA\")",
+      "Bash(curl -s \"https://ecos.bok.or.kr/api/StatisticSearch/RZLY4Q1Q3Q0YRYPO8AZK/json/kr/1/5/731Y001/D/20250520/20250530/0000002\")"
+    ]
+  }
+}
