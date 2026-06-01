@@ -52,8 +52,7 @@ class StockControllerTest {
 
     @Test
     void getStockDetail_returnsDetail() throws Exception {
-        StockDetailDto dto = new StockDetailDto("egg", "달걀", "식품", "축산물", "30구",
-                5800L, 5165L, 635L, 12.3, 5800L, 4200L, 1240L, 4500.0, 2.3);
+        StockDetailDto dto = new StockDetailDto("egg", "달걀", "식품", "축산물", "30구", 5800L, 5165L, 635L, 12.3, 5800L, 4200L, 1240L, 4500.0, 2.3);
         when(stockService.getStockDetail("egg")).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/stocks/egg"))
