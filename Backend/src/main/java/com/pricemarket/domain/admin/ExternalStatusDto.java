@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record ExternalStatusDto(OpinetStatus opinet, EcosStatus ecos) {
+public record ExternalStatusDto(OpinetStatus opinet, EcosStatus ecos, KamisStatus kamis) {
 
     public record OpinetStatus(
             LocalDateTime lastSyncAt,
@@ -22,4 +22,12 @@ public record ExternalStatusDto(OpinetStatus opinet, EcosStatus ecos) {
     ) {}
 
     public record EcosStockInfo(String id, String name, Long latestValue, String unit) {}
+
+    public record KamisStatus(
+            LocalDateTime lastSyncAt,
+            long stockCount,
+            long priceHistoryCount,
+            List<String> successItems,
+            List<String> failedItems
+    ) {}
 }

@@ -56,7 +56,7 @@ public class Stock extends BaseEntity {
     private Long changeAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(columnDefinition = "VARCHAR(20)")
     private DataSource source;
 
     @Column(length = 100)

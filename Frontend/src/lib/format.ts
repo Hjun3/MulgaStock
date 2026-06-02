@@ -1,6 +1,16 @@
 export const formatPrice = (price: number) =>
   `₩${price.toLocaleString('ko-KR')}`;
 
+// KAMIS/ECOS 거시지표 전용 — 스케일 변환 포함
+// bp: ×100 저장 (250 → "2.50%"), 지수: ×100 저장 (11571 → "115.71"), 원: ×1 저장
+export const formatMacroValue = (price: number, unit: string): string => {
+  if (unit === 'bp') return `${(price / 100).toFixed(2)}%`;
+  if (unit === '지수') return (price / 100).toFixed(2);
+  return `₩${price.toLocaleString('ko-KR')}`;
+};
+
+export const isMacroCategory = (category: string) => category === '거시지표';
+
 export const formatPercent = (value: number, decimals = 2) => {
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(decimals)}%`;

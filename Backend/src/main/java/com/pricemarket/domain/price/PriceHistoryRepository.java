@@ -30,6 +30,8 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
 
     boolean existsByStockId(String stockId);
 
+    boolean existsByStockIdAndDate(String stockId, LocalDate date);
+
     long countByStockId(String stockId);
 
     @Query("SELECT COUNT(ph) FROM PriceHistory ph WHERE ph.stock.source = :source")

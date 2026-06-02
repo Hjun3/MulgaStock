@@ -5,7 +5,7 @@ export interface ApiResponse<T> {
   timestamp: string;
 }
 
-export type StockCategory = 'FOOD' | 'DAILY' | 'ENERGY' | 'GOODS';
+export type StockCategory = 'FOOD' | 'DAILY' | 'ENERGY' | 'GOODS' | 'MACRO';
 
 export interface StockSummary {
   id: string;
@@ -20,6 +20,7 @@ export interface StockSummary {
   yearHigh?: number;
   yearLow?: number;
   volume?: number;
+  source?: string;
 }
 
 export interface StockDetail extends StockSummary {
@@ -30,6 +31,8 @@ export interface StockDetail extends StockSummary {
   volume: number;
   categoryAveragePrice: number;
   categoryAverageChangePercent: number;
+  source: string;
+  externalCode?: string;
 }
 
 export interface PriceHistory {

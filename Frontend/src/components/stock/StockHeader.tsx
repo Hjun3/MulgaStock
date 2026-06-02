@@ -1,5 +1,5 @@
 import { Star } from 'lucide-react';
-import { formatPrice } from '../../lib/format';
+import { formatPrice, formatMacroValue, isMacroCategory } from '../../lib/format';
 import { ChangeBadge } from '../common/ChangeBadge';
 import { usePortfolioStore } from '../../store/portfolioStore';
 import { cn } from '../../lib/cn';
@@ -32,7 +32,9 @@ export function StockHeader({ stock }: Props) {
         <h1 className="mt-1 text-2xl font-bold text-text-primary">{stock.name}</h1>
         <div className="mt-2 flex items-baseline gap-3">
           <span className="font-numeric text-4xl font-bold text-text-primary">
-            {formatPrice(stock.currentPrice)}
+            {isMacroCategory(stock.category)
+              ? formatMacroValue(stock.currentPrice, stock.unit)
+              : formatPrice(stock.currentPrice)}
           </span>
           <div className="flex flex-col items-start">
             <ChangeBadge value={stock.changePercent} size="lg" />
@@ -40,7 +42,10 @@ export function StockHeader({ stock }: Props) {
               'font-numeric text-sm',
               stock.changeAmount > 0 ? 'text-up' : stock.changeAmount < 0 ? 'text-down' : 'text-flat'
             )}>
-              {stock.changeAmount > 0 ? '+' : ''}{formatPrice(Math.abs(stock.changeAmount))}
+              {stock.changeAmount > 0 ? '+' : ''}
+              {isMacroCategory(stock.category)
+                ? formatMacroValue(Math.abs(stock.changeAmount), stock.unit)
+                : formatPrice(Math.abs(stock.changeAmount))}
             </span>
           </div>
         </div>

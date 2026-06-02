@@ -91,8 +91,8 @@ export function MarketSummaryBar() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-24" />
         ))}
       </div>
@@ -101,14 +101,16 @@ export function MarketSummaryBar() {
 
   if (!data) return null;
 
+  const activeSectors = data.sectors.filter((s) => s.stockCount > 0);
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
       <SummaryCard
         label="전체 시장"
         changePercent={data.totalChangePercent}
         sub={`상승 ${data.gainersCount} · 하락 ${data.losersCount}`}
       />
-      {data.sectors.map((sector) => (
+      {activeSectors.map((sector) => (
         <SectorCard key={sector.category} sector={sector} />
       ))}
     </div>

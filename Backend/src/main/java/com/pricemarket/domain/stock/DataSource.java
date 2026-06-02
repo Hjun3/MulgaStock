@@ -10,7 +10,8 @@ public enum DataSource {
     OPINET("한국석유공사 Opinet"),
     ECOS("한국은행 ECOS"),
     KCA_PROCESSED("한국소비자원 가공식품"),
-    KCA_NECESSITY("한국소비자원 생필품");
+    KCA_NECESSITY("한국소비자원 생필품"),
+    KAMIS("한국농수산식품유통공사 KAMIS");
 
     private final String displayName;
 }

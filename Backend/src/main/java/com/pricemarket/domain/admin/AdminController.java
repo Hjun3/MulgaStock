@@ -5,6 +5,10 @@ import com.pricemarket.domain.price.PriceHistoryRepository;
 import com.pricemarket.domain.stock.DataSource;
 import com.pricemarket.domain.stock.Stock;
 import com.pricemarket.domain.stock.StockRepository;
+import com.pricemarket.scheduler.EcosScheduler;
+import com.pricemarket.scheduler.KamisScheduler;
+import com.pricemarket.scheduler.OpinetScheduler;
+import com.pricemarket.seed.agri.AgriStockCatalog;
 import com.pricemarket.seed.energy.EnergyStockSeeder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -27,12 +32,16 @@ public class AdminController {
     private final StockRepository stockRepository;
     private final PriceHistoryRepository priceHistoryRepository;
     private final EnergyStockSeeder energyStockSeeder;
+    private final OpinetScheduler opinetScheduler;
+    private final EcosScheduler ecosScheduler;
+    private final KamisScheduler kamisScheduler;
 
     @GetMapping("/external-status")
     public ApiResponse<ExternalStatusDto> getExternalStatus() {
         ExternalStatusDto.OpinetStatus opinetStatus = buildOpinetStatus();
         ExternalStatusDto.EcosStatus ecosStatus = buildEcosStatus();
-        return ApiResponse.success(new ExternalStatusDto(opinetStatus, ecosStatus));
+        ExternalStatusDto.KamisStatus kamisStatus = buildKamisStatus();
+        return ApiResponse.success(new ExternalStatusDto(opinetStatus, ecosStatus, kamisStatus));
     }
 
     @PostMapping("/sync/opinet")
@@ -44,6 +53,24 @@ public class AdminController {
                 "savedPriceRecords", saved,
                 "message", saved > 0 ? "동기화 완료" : "건너뜀 (이미 동기화됨 또는 API 키 미설정)"
         ));
+    }
+
+    @PostMapping("/scheduler/opinet/trigger")
+    public ApiResponse<String> triggerOpinet() {
+        opinetScheduler.updateDailyPrices();
+        return ApiResponse.success("Opinet scheduler triggered");
+    }
+
+    @PostMapping("/scheduler/ecos/trigger")
+    public ApiResponse<String> triggerEcos() {
+        ecosScheduler.updateDailyPrices();
+        return ApiResponse.success("ECOS scheduler triggered");
+    }
+
+    @PostMapping("/scheduler/kamis/trigger")
+    public ApiResponse<String> triggerKamis() {
+        kamisScheduler.updateDailyPrices();
+        return ApiResponse.success("KAMIS scheduler triggered");
     }
 
     private ExternalStatusDto.OpinetStatus buildOpinetStatus() {
@@ -74,5 +101,31 @@ public class AdminController {
                 .toList();
 
         return new ExternalStatusDto.EcosStatus(lastSyncAt, stockCount, historyCount, stocks);
+    }
+
+    private ExternalStatusDto.KamisStatus buildKamisStatus() {
+        long stockCount = stockRepository.countBySource(DataSource.KAMIS);
+        long historyCount = priceHistoryRepository.countByStockSource(DataSource.KAMIS);
+        LocalDateTime lastSyncAt = stockRepository.findBySource(DataSource.KAMIS).stream()
+                .map(Stock::getUpdatedAt)
+                .filter(t -> t != null)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+
+        Set<String> kamisIds = stockRepository.findBySource(DataSource.KAMIS).stream()
+                .map(Stock::getId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        List<String> successItems = AgriStockCatalog.ITEMS.stream()
+                .map(m -> m.id())
+                .filter(kamisIds::contains)
+                .toList();
+
+        List<String> failedItems = AgriStockCatalog.ITEMS.stream()
+                .map(m -> m.id())
+                .filter(id -> !kamisIds.contains(id))
+                .toList();
+
+        return new ExternalStatusDto.KamisStatus(lastSyncAt, stockCount, historyCount, successItems, failedItems);
     }
 }
