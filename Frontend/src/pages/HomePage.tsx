@@ -12,13 +12,16 @@ import {
   getWatchlist,
 } from '../utils';
 
-// 한 종목의 가격 이력 묶음 (지수 계산용)
+// 거시지표(CPI/PPI/환율/금리) 카테고리 이름 — 물가 종목 랭킹에서는 제외한다.
+const MACRO = '거시지표';
+
+// 한 종목의 가격 이력 묶음 (카테고리 지수 계산용)
 interface History {
   category: string;
   points: PriceHistory[];
 }
 
-// 지수 그래프의 한 점
+// 그래프의 한 점
 interface IndexPoint {
   date: string;
   value: number;
@@ -26,23 +29,39 @@ interface IndexPoint {
 
 export default function HomePage() {
   const [market, setMarket] = useState<MarketSummary | null>(null);
-  const [stocks, setStocks] = useState<StockSummary[]>([]); // 전체 종목 (등락률 높은 순)
-  const [histories, setHistories] = useState<History[]>([]); // 전체 종목의 가격 이력
+  const [cpi, setCpi] = useState<StockDetail | null>(null); // 소비자물가지수
+  const [cpiSeries, setCpiSeries] = useState<IndexPoint[]>([]); // CPI 월별 시계열
+  const [stocks, setStocks] = useState<StockSummary[]>([]); // 물가 종목들(거시지표 제외)
+  const [histories, setHistories] = useState<History[]>([]); // 식품/생필품/에너지 이력
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   const [keyword, setKeyword] = useState('');
   const navigate = useNavigate();
 
-  // 처음 한 번: 시장 요약 + 전체 종목 + 각 종목의 3개월 이력을 불러온다.
   useEffect(() => {
-    Promise.all([getMarketSummary(), getTopStocks(50)])
-      .then(([m, page]) => {
+    Promise.all([
+      getMarketSummary(),
+      getTopStocks(200),
+      getStockDetail('cpi').catch(() => null), // CPI 없으면 null
+      getStockHistory('cpi', '1Y').catch(() => [] as PriceHistory[]),
+    ])
+      .then(([m, page, cpiDetail, cpiHist]) => {
         setMarket(m);
-        setStocks(page.content);
-        // 각 종목의 가격 이력을 모은다. (하나가 실패해도 전체가 멈추지 않도록 catch)
+        setCpi(cpiDetail);
+        // CPI는 ×100 으로 저장돼 있어 100으로 나눠 실제 지수값으로
+        setCpiSeries(cpiHist.map((p) => ({ date: p.date, value: p.close / 100 })));
+
+        // 거시지표를 뺀 실제 물가 종목들
+        const products = page.content.filter((s) => s.category !== MACRO);
+        setStocks(products);
+
+        // 식품/생필품/에너지 종목들의 이력만 모은다 (오른쪽 카테고리 그래프용)
+        const members = products.filter((s) =>
+          ['식품', '생필품', '에너지'].includes(s.category)
+        );
         return Promise.all(
-          page.content.map((s) =>
+          members.map((s) =>
             getStockHistory(s.id, '3M')
               .then((points) => ({ category: s.category, points }))
               .catch(() => ({ category: s.category, points: [] as PriceHistory[] }))
@@ -72,14 +91,14 @@ export default function HomePage() {
     );
   }
 
-  // 카테고리별 종목 (이미 등락률 높은 순으로 정렬돼 있음)
   const food = stocks.filter((s) => s.category === '식품');
   const daily = stocks.filter((s) => s.category === '생필품');
   const energy = stocks.filter((s) => s.category === '에너지');
   const top10 = stocks.slice(0, 10);
 
-  // 시간별 물가지수 (기준=100)
-  const overallIndex = buildIndex(histories, () => true);
+  // CPI 지수값(예: 119.92)과 전월 대비 등락률
+  const cpiIndex = cpi ? cpi.currentPrice / 100 : null;
+  const cpiChange = cpi ? cpi.changePercent : 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -99,28 +118,59 @@ export default function HomePage() {
         </button>
       </form>
 
-      {/* ===== 2행: 시간별 전체 물가(좌, 크게) + 시간별 카테고리 그래프(우, 1/3씩) ===== */}
+      {/* ===== 2행: 전체 물가지수(CPI, 좌) + 카테고리 시계열(우) ===== */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* 시간별 전체 물가 (2칸 차지) */}
+        {/* 소비자물가지수 (CPI) — 한국은행 실데이터 */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-sm text-slate-400">전체 물가지수 (3개월)</p>
-              <p className={'text-4xl font-bold ' + changeColor(market.totalChangePercent)}>
-                {formatPercent(market.totalChangePercent)}
+              <p className="text-sm text-slate-400">소비자물가지수 (CPI · 2020=100)</p>
+              <p className="text-4xl font-bold text-slate-100">
+                {cpiIndex !== null ? cpiIndex.toFixed(2) : '-'}
+                <span className={'text-lg font-bold ml-2 ' + changeColor(cpiChange)}>
+                  {formatPercent(cpiChange)}
+                </span>
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                상승 {market.gainersCount} · 하락 {market.losersCount} · 기준=100
+                전월 대비 · 오늘 종목 상승 {market.gainersCount} · 하락 {market.losersCount}
               </p>
             </div>
             <span className="text-xs bg-indigo-500/20 text-indigo-300 rounded-full px-2 py-0.5">
-              {formatDateTime(market.lastUpdated)} · DB 실시간
+              {formatDateTime(market.lastUpdated)} · 한국은행 ECOS
             </span>
           </div>
 
-          {/* 전체 물가지수 추이 (선그래프) */}
+          {/* CPI 월별 추이 (최근 1년) */}
           <div className="mt-3 flex-1">
-            <BigLine data={overallIndex} color="#818cf8" />
+            {cpiSeries.length === 0 ? (
+              <p className="text-center text-slate-500 py-16 text-sm">CPI 데이터가 없습니다.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={190}>
+                <LineChart data={cpiSeries}>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#94a3b8', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    minTickGap={30}
+                    tickFormatter={(d: string) => d.slice(0, 7)}
+                  />
+                  <YAxis
+                    tick={{ fill: '#64748b', fontSize: 11 }}
+                    domain={['auto', 'auto']}
+                    width={44}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8, color: '#e2e8f0' }}
+                    labelStyle={{ color: '#94a3b8' }}
+                    formatter={(v) => [Number(v).toFixed(2), 'CPI']}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="#818cf8" dot={false} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* AI 코멘트 */}
@@ -130,7 +180,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 시간별 카테고리 그래프 (오른쪽 세로 배치) */}
+        {/* 카테고리별 시간 그래프 (오른쪽 세로 배치) */}
         <div className="flex flex-col gap-4">
           <MiniLine
             label="식품"
@@ -174,37 +224,6 @@ export default function HomePage() {
 }
 
 // ===================== 이 페이지 전용 작은 컴포넌트들 =====================
-
-// 전체 물가지수 선그래프 (큰 버전)
-function BigLine({ data, color }: { data: IndexPoint[]; color: string }) {
-  return (
-    <ResponsiveContainer width="100%" height={190}>
-      <LineChart data={data}>
-        <XAxis
-          dataKey="date"
-          tick={{ fill: '#94a3b8', fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          minTickGap={40}
-          tickFormatter={(d: string) => d.slice(5)}
-        />
-        <YAxis
-          tick={{ fill: '#64748b', fontSize: 11 }}
-          domain={['auto', 'auto']}
-          width={40}
-          axisLine={false}
-          tickLine={false}
-        />
-        <Tooltip
-          contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8, color: '#e2e8f0' }}
-          labelStyle={{ color: '#94a3b8' }}
-          formatter={(v) => [Number(v).toFixed(2), '지수']}
-        />
-        <Line type="monotone" dataKey="value" stroke={color} dot={false} strokeWidth={2} />
-      </LineChart>
-    </ResponsiveContainer>
-  );
-}
 
 // 카테고리별 시간 그래프 (작은 버전, 오른쪽 세로)
 function MiniLine(props: { label: string; avg: number; data: IndexPoint[] }) {
@@ -366,21 +385,19 @@ function WatchlistSidebar() {
 
 // ===================== 계산 함수들 =====================
 
-// 여러 종목의 가격 이력을 "기준=100" 물가지수 시계열로 합친다.
-// 종목마다 가격대가 다르므로(닭고기 3천원 vs 샴푸 2만원) 첫날 대비 비율로 정규화한 뒤 평균낸다.
+// 여러 종목의 가격 이력을 "기준=100" 지수 시계열로 합친다. (카테고리 그래프용)
+// 종목마다 가격대가 다르므로 첫날 대비 비율로 정규화한 뒤 평균낸다.
 function buildIndex(histories: History[], filter: (h: History) => boolean): IndexPoint[] {
   const selected = histories.filter(filter);
-
-  // 날짜별 (지수 합계, 개수)
   const byDate = new Map<string, { sum: number; count: number }>();
 
   for (const h of selected) {
     if (h.points.length === 0) continue;
-    const base = h.points[0].close; // 첫날 가격
+    const base = h.points[0].close;
     if (!base) continue;
 
     for (const p of h.points) {
-      const index = (p.close / base) * 100; // 기준=100 정규화
+      const index = (p.close / base) * 100;
       const cur = byDate.get(p.date) ?? { sum: 0, count: 0 };
       cur.sum += index;
       cur.count += 1;
@@ -388,7 +405,6 @@ function buildIndex(histories: History[], filter: (h: History) => boolean): Inde
     }
   }
 
-  // 날짜순으로 평균값 배열 만들기
   return Array.from(byDate.entries())
     .map(([date, v]) => ({ date, value: Number((v.sum / v.count).toFixed(2)) }))
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -402,7 +418,7 @@ function sectorAvg(market: MarketSummary, displayName: string) {
 
 // AI 시황 한 줄
 function makeAiComment(market: MarketSummary) {
-  const sectors = market.sectors.filter((s) => s.stockCount > 0);
+  const sectors = market.sectors.filter((s) => s.stockCount > 0 && s.displayName !== MACRO);
   if (sectors.length === 0) return '오늘의 시장 데이터를 정리하고 있습니다.';
 
   let top = sectors[0];
