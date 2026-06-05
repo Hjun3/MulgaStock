@@ -47,3 +47,6 @@ bin/
 ### OS ###
 .DS_Store
 Thumbs.db
+
+### Local H2 DB data (generated at runtime, not committed) ###
+data/

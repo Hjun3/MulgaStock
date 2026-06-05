@@ -35,7 +35,9 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testRuntimeOnly("com.h2database:h2")
+    // 로컬(local) 프로파일에서 H2 파일 DB로 실행하기 위해 runtimeOnly 로 변경.
+    // (테스트 런타임 classpath 에도 포함되므로 기존 H2 테스트도 그대로 동작)
+    runtimeOnly("com.h2database:h2")
 }
 
 tasks.withType<JavaCompile> {
