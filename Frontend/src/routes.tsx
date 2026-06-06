@@ -5,13 +5,15 @@ import { StockDetailPage } from './pages/StockDetailPage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { SearchResultPage } from './pages/SearchResultPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { LandingPage } from './pages/LandingPage';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <LandingPage /> },
+      { path: 'market', element: <HomePage /> },
       { path: 'stocks/:id', element: <StockDetailPage /> },
       { path: 'portfolio', element: <PortfolioPage /> },
       { path: 'search', element: <SearchResultPage /> },

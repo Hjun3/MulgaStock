@@ -16,6 +16,9 @@ export function Header() {
         </div>
 
         <nav className="flex shrink-0 items-center gap-4">
+          <Link to="/market" className="text-sm text-text-secondary transition-colors hover:text-text-primary">
+            시장
+          </Link>
           <Link
             to="/portfolio"
             className="text-sm text-text-secondary transition-colors hover:text-text-primary"

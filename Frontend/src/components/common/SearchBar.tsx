@@ -7,7 +7,7 @@ import { formatPrice } from '../../lib/format';
 import { ChangeBadge } from './ChangeBadge';
 import { cn } from '../../lib/cn';
 
-export function SearchBar() {
+export function SearchBar({ className }: { className?: string }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const debounced = useDebounce(query, 300);
@@ -38,7 +38,7 @@ export function SearchBar() {
   };
 
   return (
-    <div ref={ref} className="relative w-full max-w-sm">
+    <div ref={ref} className={cn("relative w-full max-w-sm", className)}>
       <form onSubmit={handleSubmit}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
