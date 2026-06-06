@@ -1,24 +1,14 @@
-import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { PageContainer } from '../components/layout/PageContainer';
+import { Link } from 'react-router-dom';
 
-export function NotFoundPage() {
-  const navigate = useNavigate();
+// 없는 주소로 들어왔을 때 보여주는 페이지
+export default function NotFoundPage() {
   return (
-    <>
-      <Helmet><title>페이지를 찾을 수 없습니다 — PriceMarket</title></Helmet>
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center py-32 text-center">
-          <p className="font-numeric text-6xl font-bold text-text-muted">404</p>
-          <p className="mt-4 text-xl font-semibold text-text-primary">페이지를 찾을 수 없습니다</p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-6 rounded-lg border border-border px-6 py-2 text-sm text-text-secondary hover:bg-bg-tertiary"
-          >
-            메인으로
-          </button>
-        </div>
-      </PageContainer>
-    </>
+    <div className="text-center py-32">
+      <p className="text-6xl font-bold text-slate-700">404</p>
+      <p className="mt-4 text-lg text-slate-300">페이지를 찾을 수 없습니다</p>
+      <Link to="/" className="inline-block mt-6 text-indigo-400 text-sm">
+        메인으로
+      </Link>
+    </div>
   );
 }

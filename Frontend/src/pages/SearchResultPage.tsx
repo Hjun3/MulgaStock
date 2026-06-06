@@ -1,53 +1,64 @@
-import { useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { useStockSearch } from '../hooks/useStockSearch';
-import { PageContainer } from '../components/layout/PageContainer';
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { useNavigate } from 'react-router-dom';
-import { formatPrice } from '../lib/format';
-import { ChangeBadge } from '../components/common/ChangeBadge';
+import { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { searchStocks } from '../api';
+import type { StockSummary } from '../types';
+import { formatPrice, formatPercent, changeColor } from '../utils';
 
-export function SearchResultPage() {
+export default function SearchResultPage() {
   const [params] = useSearchParams();
-  const q = params.get('q') ?? '';
-  const navigate = useNavigate();
-  const { data, isLoading } = useStockSearch(q);
+  const keyword = params.get('q') ?? ''; // 주소의 ?q=... 값
+
+  const [results, setResults] = useState<StockSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 검색어가 바뀔 때마다 검색 결과를 불러온다.
+  useEffect(() => {
+    if (keyword === '') {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    searchStocks(keyword)
+      .then((data) => setResults(data))
+      .catch(() => setResults([]))
+      .finally(() => setLoading(false));
+  }, [keyword]);
 
   return (
-    <>
-      <Helmet>
-        <title>"{q}" 검색 결과 — PriceMarket</title>
-      </Helmet>
-      <PageContainer>
-        <h1 className="mb-4 text-lg font-bold text-text-primary">
-          <span className="text-text-muted">검색: </span>"{q}"
-        </h1>
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <h1 className="text-lg font-bold text-slate-100 mb-4">
+        <span className="text-slate-500">검색: </span>"{keyword}"
+      </h1>
 
-        {isLoading ? (
-          <LoadingSpinner className="py-20" />
-        ) : !data || data.length === 0 ? (
-          <div className="py-20 text-center text-text-muted">검색 결과가 없습니다</div>
-        ) : (
-          <div className="space-y-2">
-            {data.map((stock) => (
-              <button
-                key={stock.id}
-                onClick={() => navigate(`/stocks/${stock.id}`)}
-                className="flex w-full items-center justify-between rounded-xl border border-border bg-bg-secondary px-4 py-3 text-left transition-colors hover:bg-bg-tertiary"
-              >
-                <div>
-                  <p className="font-semibold text-text-primary">{stock.name}</p>
-                  <p className="text-xs text-text-muted">{stock.category} · {stock.unit}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-numeric text-sm text-text-primary">{formatPrice(stock.currentPrice)}</p>
-                  <ChangeBadge value={stock.changePercent} size="sm" />
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </PageContainer>
-    </>
+      {loading ? (
+        <p className="text-center text-slate-400 py-20">불러오는 중...</p>
+      ) : results.length === 0 ? (
+        <p className="text-center text-slate-400 py-20">검색 결과가 없습니다.</p>
+      ) : (
+        <div className="space-y-2">
+          {results.map((stock) => (
+            <Link
+              key={stock.id}
+              to={'/stocks/' + stock.id}
+              className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-4 hover:bg-slate-800"
+            >
+              <div>
+                <p className="font-semibold text-slate-100">{stock.name}</p>
+                <p className="text-xs text-slate-500">
+                  {stock.category} · {stock.unit}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-slate-200">{formatPrice(stock.currentPrice)}</p>
+                <p className={'text-sm ' + changeColor(stock.changePercent)}>
+                  {formatPercent(stock.changePercent)}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
