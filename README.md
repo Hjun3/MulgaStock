@@ -1,23 +1,113 @@
 # MulgaStock
 
-물가를 주식처럼 — 소비자 물가 실시간 시각화 서비스
+> 물가를 주식처럼 — 소비자 물가 실시간 시각화 서비스
+
+매일 변하는 생활 물가를 주식 시세판처럼 한눈에 확인할 수 있는 웹 서비스입니다. KAMIS·Opinet·ECOS 공공 데이터를 기반으로 농수축산물, 에너지, 거시지표 등 28종 품목의 가격 변동을 차트로 시각화합니다.
+
+---
 
 ## 소개
-KAMIS·Opinet·ECOS 데이터를 기반으로 농수축산물, 에너지, 거시지표 등
-28종 품목의 가격 변동을 주식 차트 방식으로 시각화합니다.
+
+물가 상승은 누구나 체감하지만, 어떤 품목이 얼마나 올랐는지 직관적으로 확인하기는 어렵습니다. MulgaStock은 생활 물가를 주식 차트라는 익숙한 형식으로 바꿔, 사용자가 가격 흐름을 쉽게 읽고 비교할 수 있도록 합니다.
+
+품목별 등락률, 카테고리별 급등·급락 순위, AI 시황 코멘트를 제공하여 단순한 숫자 나열을 넘어 "오늘의 물가 흐름"을 한 장면으로 보여주는 것을 목표로 합니다.
+
+---
 
 ## 주요 기능
-- 실시간 물가 추적 (캔들스틱·라인 차트)
-- AI 시황 분석 (AI 기반 자동 코멘트)
-- 카테고리별 급등·급락 TOP 3
-- 품목 포트폴리오 관리
 
-## 데이터 출처
-- KAMIS (농식품부 — 농수축산물)
-- Opinet (한국석유공사 — 에너지)
-- ECOS (한국은행 — 거시지표)
+- **실시간 물가 추적** — 28종 품목의 가격을 주기적으로 갱신하고 라인 차트로 시각화합니다.
+- **AI 시황 분석** — OpenAI API를 활용해 오늘의 물가 흐름을 주식 시황처럼 자동으로 요약합니다.
+- **카테고리별 급등·급락 TOP 3** — 식품·생필품·에너지 카테고리별로 가장 많이 오르거나 내린 품목을 보여줍니다.
+- **종목 검색** — 품목명으로 검색해 상세 페이지로 바로 이동할 수 있습니다.
+- **포트폴리오(관심 목록)** — 관심 있는 품목을 즐겨찾기해 나만의 생활 물가 목록을 구성합니다.
+- **전체 등락률 TOP 10** — 전 품목 중 등락률 상위 10개를 표로 정리합니다.
+
+---
+
+## 화면 구성
+
+- **랜딩 페이지** (`/`) — 서비스 소개 히어로, 전체 물가지수 요약, 카테고리별 급등·급락, TOP 10 표
+- **시장 현황** (`/market`) — 전체 종목 대시보드
+- **종목 상세** (`/stocks/:id`) — 개별 품목의 가격 추이 차트와 상세 정보
+- **포트폴리오** (`/portfolio`) — 관심 등록한 품목 모음
+- **검색 결과** (`/search`) — 검색어에 해당하는 품목 목록
+
+---
 
 ## 기술 스택
-- Frontend: React, TypeScript, Tailwind CSS
-- Backend: Java Spring Boot
-- AI: OpenAI GPT API
+
+**Frontend**
+- React, TypeScript
+- Tailwind CSS
+- Vite
+- React Router, Recharts
+
+**Backend**
+- Java, Spring Boot
+- MySQL
+- Spring Data JPA
+
+**AI 서버**
+- Node.js, Express
+- OpenAI API
+
+---
+
+## 시스템 구조
+
+MulgaStock은 세 개의 독립적인 모듈로 구성됩니다.
+
+- **Frontend** — 사용자에게 차트와 데이터를 보여주는 React 웹 애플리케이션
+- **Backend** — 공공 API 데이터를 수집·가공해 REST API로 제공하는 Spring Boot 서버
+- **AI 서버** — 백엔드 데이터를 받아 물가 시황 코멘트를 생성하는 Express 서버
+
+Frontend는 Backend의 REST API를 호출해 데이터를 받고, AI 시황은 별도 AI 서버를 통해 제공됩니다.
+
+---
+
+## 데이터 출처
+
+- **KAMIS** (농식품부) — 농수축산물 가격
+- **Opinet** (한국석유공사) — 에너지(유가 등) 가격
+- **ECOS** (한국은행) — 소비자물가지수 등 거시지표
+
+---
+
+## 프로젝트 구조
+
+\`\`\`
+MulgaStock/
+├── Frontend/      # React + TypeScript 웹 애플리케이션
+├── Backend/       # Spring Boot REST API 서버
+├── AI/            # Node.js + Express AI 시황 서버
+└── README.md
+\`\`\`
+
+---
+
+## 시작하기
+
+각 모듈은 독립적으로 실행됩니다.
+
+**Frontend**
+\`\`\`bash
+cd Frontend
+npm install
+npm run dev
+\`\`\`
+
+**Backend**
+\`\`\`bash
+cd Backend
+./gradlew bootRun
+\`\`\`
+> 로컬 실행 시 \`application-local.yml\`에 DB 접속 정보와 API 키를 설정해야 합니다.
+
+**AI 서버**
+\`\`\`bash
+cd AI
+npm install
+npm start
+\`\`\`
+> \`.env\`에 OpenAI API 키(\`OPENAI_API_KEY\`)를 설정해야 합니다.
