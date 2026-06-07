@@ -7,3 +7,8 @@
 body {
   font-family: 'Pretendard', system-ui, sans-serif;
 }
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-wrapper *:focus {
+  outline: none;
+}
