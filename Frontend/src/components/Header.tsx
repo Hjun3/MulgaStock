@@ -8,7 +8,7 @@ export default function Header() {
         {/* 로고 (누르면 홈으로) */}
         <Link to="/" className="flex items-center gap-2 text-lg font-bold text-slate-100">
           <span className="text-indigo-400">📈</span>
-          PriceMarket
+          MulgaStock
         </Link>
 
         {/* 오른쪽 메뉴 */}

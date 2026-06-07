@@ -8,7 +8,7 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
         <Link to="/" className="flex shrink-0 items-center gap-2 text-accent-primary">
           <BarChart2 className="h-5 w-5" />
-          <span className="font-bold tracking-tight">PriceMarket</span>
+          <span className="font-bold tracking-tight">MulgaStock</span>
         </Link>
 
         <div className="flex-1">
