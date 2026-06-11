@@ -17,7 +17,7 @@ export default function AuthModal({ onClose }: Props) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: { preventDefault(): void }) => {
+  const handleSubmit = (e: { preventDefault(): void }) => {
     e.preventDefault();
     setError('');
 
@@ -38,20 +38,17 @@ export default function AuthModal({ onClose }: Props) {
     }
 
     setLoading(true);
-    try {
-      if (tab === 'login') {
-        await login(email, password);
-        alert('로그인되었습니다.');
-      } else {
-        await register(email, password);
-        alert('회원가입이 완료되었습니다.');
-      }
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    const action = tab === 'login' ? login(email, password) : register(email, password);
+    action
+      .then(() => {
+        alert(tab === 'login' ? '로그인되었습니다.' : '회원가입이 완료되었습니다.');
+        setLoading(false);
+        onClose();
+      })
+      .catch((err: Error) => {
+        setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
+        setLoading(false);
+      });
   };
 
   const switchTab = (t: Tab) => {

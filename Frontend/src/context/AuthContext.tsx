@@ -13,14 +13,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const login = async (email: string, password: string) => {
-    await apiLogin(email, password);
-    setIsLoggedIn(true);
+  const login = (email: string, password: string): Promise<void> => {
+    return apiLogin(email, password).then(() => setIsLoggedIn(true));
   };
 
-  const register = async (email: string, password: string) => {
-    await apiRegister(email, password);
-    setIsLoggedIn(true);
+  const register = (email: string, password: string): Promise<void> => {
+    return apiRegister(email, password).then(() => setIsLoggedIn(true));
   };
 
   const logout = () => setIsLoggedIn(false);

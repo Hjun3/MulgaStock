@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { getMarketSummary, getTopStocks, getStockHistory, getStockDetail } from '../api';
+import { getMarketSummary, getTopStocks, getStockHistory, getStockDetail, fetchInsight } from '../api';
 import type { MarketSummary, StockSummary, StockDetail, PriceHistory } from '../types';
 import {
   formatPrice,
@@ -27,6 +27,7 @@ interface IndexPoint {
 
 export default function HomePage() {
   const [market, setMarket] = useState<MarketSummary | null>(null);
+  const [insight, setInsight] = useState<string | null>(null);
   const [cpi, setCpi] = useState<StockDetail | null>(null);
   const [cpiSeries, setCpiSeries] = useState<IndexPoint[]>([]);
   const [stocks, setStocks] = useState<StockSummary[]>([]);
@@ -54,14 +55,20 @@ export default function HomePage() {
     ])
       .then(([m, page, cpiDetail, cpiHist]) => {
         setMarket(m);
+        fetchInsight('market', {
+          gainersCount: m.gainersCount,
+          losersCount: m.losersCount,
+          totalChangePercent: m.totalChangePercent,
+          sectors: m.sectors,
+        }).then(setInsight).catch(() => {});
         setCpi(cpiDetail);
         setCpiSeries(cpiHist.map((p) => ({ date: p.date, value: p.close / 100 })));
 
-        const products = page.content.filter((s) => s.category !== MACRO);
+        const products = page.content;
         setStocks(products);
 
-        const members = products.filter((s) =>
-          ['식품', '생필품', '에너지'].includes(s.category)
+        const members = page.content.filter((s) =>
+          ['거시지표', '식품', '에너지'].includes(s.category)
         );
         return Promise.all(
           members.map((s) =>
@@ -71,9 +78,8 @@ export default function HomePage() {
           )
         );
       })
-      .then((result) => setHistories(result))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+      .then((result) => { setHistories(result); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
   }, []);
 
   function handleSearch(e: { preventDefault(): void }) {
@@ -94,8 +100,8 @@ export default function HomePage() {
     );
   }
 
+  const macro = stocks.filter((s) => s.category === MACRO);
   const food = stocks.filter((s) => s.category === '식품');
-  const daily = stocks.filter((s) => s.category === '생필품');
   const energy = stocks.filter((s) => s.category === '에너지');
   const top10 = stocks.slice(0, 10);
 
@@ -175,20 +181,22 @@ export default function HomePage() {
 
           <div className="mt-3 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg p-3">
             <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-300 mb-1">✨ 오늘의 AI 시황</p>
-            <p className="text-sm text-slate-700 dark:text-slate-300">{makeAiComment(market)}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              {insight === null ? 'AI 분석 중...' : insight}
+            </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <MiniLine
+            label="거시지표"
+            avg={sectorAvg(market, '거시지표')}
+            data={buildIndex(histories, (h) => h.category === '거시지표')}
+          />
+          <MiniLine
             label="식품"
             avg={sectorAvg(market, '식품')}
             data={buildIndex(histories, (h) => h.category === '식품')}
-          />
-          <MiniLine
-            label="생필품"
-            avg={sectorAvg(market, '생필품')}
-            data={buildIndex(histories, (h) => h.category === '생필품')}
           />
           <MiniLine
             label="에너지"
@@ -202,8 +210,8 @@ export default function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
         <div className="space-y-6">
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CategoryRank label="거시지표" stocks={macro} />
             <CategoryRank label="식품" stocks={food} />
-            <CategoryRank label="생필품" stocks={daily} />
             <CategoryRank label="에너지" stocks={energy} />
           </section>
 
@@ -407,16 +415,3 @@ function sectorAvg(market: MarketSummary, displayName: string) {
   return s ? s.averageChangePercent : 0;
 }
 
-function makeAiComment(market: MarketSummary) {
-  const sectors = market.sectors.filter((s) => s.stockCount > 0 && s.displayName !== MACRO);
-  if (sectors.length === 0) return '오늘의 시장 데이터를 정리하고 있습니다.';
-
-  let top = sectors[0];
-  let bottom = sectors[0];
-  for (const s of sectors) {
-    if (s.averageChangePercent > top.averageChangePercent) top = s;
-    if (s.averageChangePercent < bottom.averageChangePercent) bottom = s;
-  }
-  const topPhrase = top.averageChangePercent > 0 ? '소폭 상승세' : '약세';
-  return `${top.displayName} 중심으로 ${topPhrase}. ${bottom.displayName}는 조정 중입니다.`;
-}

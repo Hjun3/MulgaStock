@@ -25,13 +25,6 @@ export function barColor(value: number) {
   return '#94a3b8'; // slate-400
 }
 
-// 등락 화살표
-export function changeArrow(value: number) {
-  if (value > 0) return '▲';
-  if (value < 0) return '▼';
-  return '–';
-}
-
 // 날짜 문자열을 "2026.06.02 18:00" 형태로 바꿔준다.
 export function formatDateTime(dateString: string) {
   const d = new Date(dateString);

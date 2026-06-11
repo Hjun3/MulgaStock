@@ -27,16 +27,16 @@ public class StockService {
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortField));
 
         Page<Stock> stocks = (category != null)
-                ? stockRepository.findByCategory(category, pageable)
-                : stockRepository.findAll(pageable);
+                ? stockRepository.findByCategoryAndSourceNot(category, DataSource.SEED, pageable)
+                : stockRepository.findBySourceNot(DataSource.SEED, pageable);
 
         return stocks.map(StockSummaryDto::from);
     }
 
     public List<TopMoverDto> getTopMovers(String type, int limit) {
         List<Stock> stocks = "losers".equalsIgnoreCase(type)
-                ? stockRepository.findTopLosers(limit)
-                : stockRepository.findTopGainers(limit);
+                ? stockRepository.findTopLosers(limit, DataSource.SEED)
+                : stockRepository.findTopGainers(limit, DataSource.SEED);
         return stocks.stream().map(TopMoverDto::from).toList();
     }
 
@@ -44,8 +44,8 @@ public class StockService {
         Stock stock = stockRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.STOCK_NOT_FOUND));
 
-        Double categoryAvgPrice = stockRepository.findAveragePriceByCategory(stock.getCategory());
-        Double categoryAvgChangePercent = stockRepository.findAverageChangePercentByCategory(stock.getCategory());
+        Double categoryAvgPrice = stockRepository.findAveragePriceByCategory(stock.getCategory(), DataSource.SEED);
+        Double categoryAvgChangePercent = stockRepository.findAverageChangePercentByCategory(stock.getCategory(), DataSource.SEED);
 
         return StockDetailDto.from(stock,
                 categoryAvgPrice != null ? Math.round(categoryAvgPrice * 10.0) / 10.0 : 0.0,
@@ -54,14 +54,14 @@ public class StockService {
 
     public List<StockSummaryDto> searchStocks(String q, int limit) {
         PageRequest pageable = PageRequest.of(0, limit);
-        return stockRepository.findByNameContainingIgnoreCase(q, pageable)
+        return stockRepository.findByNameContainingIgnoreCaseAndSourceNot(q, DataSource.SEED, pageable)
                 .stream()
                 .map(StockSummaryDto::from)
                 .toList();
     }
 
     public List<StockSummaryDto> getStocksByCategory(StockCategory category) {
-        return stockRepository.findByCategory(category)
+        return stockRepository.findByCategoryAndSourceNot(category, DataSource.SEED)
                 .stream()
                 .map(StockSummaryDto::from)
                 .toList();

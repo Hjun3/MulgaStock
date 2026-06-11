@@ -19,9 +19,8 @@ export default function SearchResultPage() {
     }
     setLoading(true);
     searchStocks(keyword)
-      .then((data) => setResults(data))
-      .catch(() => setResults([]))
-      .finally(() => setLoading(false));
+      .then((data) => { setResults(data); setLoading(false); })
+      .catch(() => { setResults([]); setLoading(false); });
   }, [keyword]);
 
   return (

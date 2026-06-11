@@ -11,30 +11,30 @@ import java.util.Optional;
 
 public interface StockRepository extends JpaRepository<Stock, String> {
 
-    Page<Stock> findByCategory(StockCategory category, Pageable pageable);
+    Page<Stock> findBySourceNot(DataSource source, Pageable pageable);
 
-    List<Stock> findByCategory(StockCategory category);
+    Page<Stock> findByCategoryAndSourceNot(StockCategory category, DataSource source, Pageable pageable);
 
-    List<Stock> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    List<Stock> findByCategoryAndSourceNot(StockCategory category, DataSource source);
 
-    List<Stock> findTop5ByOrderByChangePercentDesc();
+    List<Stock> findByNameContainingIgnoreCaseAndSourceNot(String name, DataSource source, Pageable pageable);
 
-    List<Stock> findTop5ByOrderByChangePercentAsc();
+    List<Stock> findBySourceNot(DataSource source);
 
-    @Query("SELECT s FROM Stock s ORDER BY s.changePercent DESC LIMIT :limit")
-    List<Stock> findTopGainers(@Param("limit") int limit);
+    @Query("SELECT s FROM Stock s WHERE s.source != :excluded ORDER BY s.changePercent DESC LIMIT :limit")
+    List<Stock> findTopGainers(@Param("limit") int limit, @Param("excluded") DataSource excluded);
 
-    @Query("SELECT s FROM Stock s ORDER BY s.changePercent ASC LIMIT :limit")
-    List<Stock> findTopLosers(@Param("limit") int limit);
+    @Query("SELECT s FROM Stock s WHERE s.source != :excluded ORDER BY s.changePercent ASC LIMIT :limit")
+    List<Stock> findTopLosers(@Param("limit") int limit, @Param("excluded") DataSource excluded);
 
-    @Query("SELECT AVG(s.currentPrice) FROM Stock s WHERE s.category = :category")
-    Double findAveragePriceByCategory(@Param("category") StockCategory category);
+    @Query("SELECT AVG(s.currentPrice) FROM Stock s WHERE s.category = :category AND s.source != :excluded")
+    Double findAveragePriceByCategory(@Param("category") StockCategory category, @Param("excluded") DataSource excluded);
 
-    @Query("SELECT AVG(s.changePercent) FROM Stock s WHERE s.category = :category")
-    Double findAverageChangePercentByCategory(@Param("category") StockCategory category);
+    @Query("SELECT AVG(s.changePercent) FROM Stock s WHERE s.category = :category AND s.source != :excluded")
+    Double findAverageChangePercentByCategory(@Param("category") StockCategory category, @Param("excluded") DataSource excluded);
 
-    @Query("SELECT AVG(s.changePercent) FROM Stock s")
-    Double findOverallAverageChangePercent();
+    @Query("SELECT AVG(s.changePercent) FROM Stock s WHERE s.source != :excluded")
+    Double findOverallAverageChangePercent(@Param("excluded") DataSource excluded);
 
     List<Stock> findBySource(DataSource source);
 

@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { TrendingUp, Bot, Star } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { getMarketSummary, getStocksByCategory, getStockHistory, getTopStocks } from '../api';
+import { getMarketSummary, getStocksByCategory, getStockHistory, getTopStocks, fetchInsight } from '../api';
 import { formatPercent, formatPrice, changeColor } from '../utils';
 import { useTheme } from '../context/ThemeContext';
 import type { MarketSummary, StockSummary, Page } from '../types';
@@ -91,8 +91,18 @@ function HeroChartCard() {
 
 function MarketOverview() {
   const [data, setData] = useState<MarketSummary | null>(null);
+  const [insight, setInsight] = useState<string | null>(null);
 
-  useEffect(() => { getMarketSummary().then(setData).catch(() => {}); }, []);
+  useEffect(() => {
+    getMarketSummary().then(d => {
+      setData(d);
+      fetchInsight('landing', {
+        gainersCount: d.gainersCount,
+        losersCount: d.losersCount,
+        totalChangePercent: d.totalChangePercent,
+      }).then(setInsight).catch(() => {});
+    }).catch(() => {});
+  }, []);
 
   const activeSectors = data ? data.sectors.filter(s => s.stockCount > 0).slice(0, 3) : [];
   const total = data ? data.totalChangePercent : 0;
@@ -110,7 +120,9 @@ function MarketOverview() {
         <StockLineChart height={220} />
         <div style={{ borderLeft: '3px solid #f59e0b', padding: '10px 14px', marginTop: '12px', backgroundColor: 'rgba(245,158,11,0.06)' }}>
           <p style={{ fontSize: '13px', fontWeight: '700', color: '#f59e0b', marginBottom: '4px' }}>✦ 오늘의 AI 시황</p>
-          <p style={{ fontSize: '14px', color: '#6b7fa8' }}>토큰 제한으로 인해 추후에 적용</p>
+          <p style={{ fontSize: '14px', color: '#6b7fa8' }}>
+            {insight === null ? 'AI 분석 중...' : insight}
+          </p>
         </div>
       </Card>
       <div className="flex w-60 flex-shrink-0 flex-col gap-3">
@@ -326,7 +338,7 @@ export function LandingPage() {
         <div>
           <h2 className="mb-3 text-xl font-bold text-slate-900 dark:text-slate-100">카테고리별 급등·급락</h2>
           <div className="grid grid-cols-3 gap-4">
-            {[{ key: 'FOOD', label: '식품' }, { key: 'DAILY', label: '생필품' }, { key: 'ENERGY', label: '에너지' }].map(c => (
+            {[{ key: 'MACRO', label: '거시지표' }, { key: 'FOOD', label: '식품' }, { key: 'ENERGY', label: '에너지' }].map(c => (
               <CategoryMovers key={c.key} category={c.key} label={c.label} />
             ))}
           </div>

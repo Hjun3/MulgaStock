@@ -1,5 +1,6 @@
 package com.pricemarket.domain.market;
 
+import com.pricemarket.domain.stock.DataSource;
 import com.pricemarket.domain.stock.Stock;
 import com.pricemarket.domain.stock.StockCategory;
 import com.pricemarket.domain.stock.StockRepository;
@@ -24,13 +25,13 @@ public class MarketService {
     private final StockRepository stockRepository;
 
     public MarketSummaryDto getMarketSummary() {
-        List<Stock> allStocks = stockRepository.findAll();
+        List<Stock> allStocks = stockRepository.findBySourceNot(DataSource.SEED);
 
         long gainers = allStocks.stream().filter(s -> s.getChangePercent() > 0).count();
         long losers = allStocks.stream().filter(s -> s.getChangePercent() < 0).count();
         long flat = allStocks.stream().filter(s -> s.getChangePercent() == 0).count();
 
-        Double totalAvg = stockRepository.findOverallAverageChangePercent();
+        Double totalAvg = stockRepository.findOverallAverageChangePercent(DataSource.SEED);
         double totalChangePercent = totalAvg != null ? Math.round(totalAvg * 100.0) / 100.0 : 0.0;
 
         Map<StockCategory, List<Stock>> byCategory = allStocks.stream()
@@ -52,7 +53,7 @@ public class MarketService {
     }
 
     public SectorDto getSectorDetail(StockCategory category) {
-        List<Stock> stocks = stockRepository.findByCategory(category);
+        List<Stock> stocks = stockRepository.findByCategoryAndSourceNot(category, DataSource.SEED);
         return buildSectorDto(category, stocks);
     }
 

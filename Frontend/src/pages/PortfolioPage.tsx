@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { getStockDetail, getStockHistory } from '../api';
+import { getStockDetail, getStockHistory, fetchInsight } from '../api';
 import type { StockDetail, PriceHistory } from '../types';
 import { formatPrice, formatPercent, changeColor, getWatchlist, removeWatchlist } from '../utils';
 import { useTheme } from '../context/ThemeContext';
@@ -18,24 +18,37 @@ export default function PortfolioPage() {
   const [chartHistory, setChartHistory] = useState<PriceHistory[]>([]);
   const [chartPeriod, setChartPeriod] = useState('1M');
   const [chartLoading, setChartLoading] = useState(false);
+  const [insight, setInsight] = useState<string | null>(null);
 
   useEffect(() => {
     const ids = getWatchlist();
     if (ids.length === 0) { setLoading(false); return; }
     Promise.all(ids.map((id) => getStockDetail(id)))
-      .then((data) => setStocks(data))
-      .catch(() => setStocks([]))
-      .finally(() => setLoading(false));
+      .then((data) => { setStocks(data); setLoading(false); })
+      .catch(() => { setStocks([]); setLoading(false); });
   }, []);
 
   useEffect(() => {
     if (!selectedId) return;
     setChartLoading(true);
     getStockHistory(selectedId, chartPeriod)
-      .then(setChartHistory)
-      .catch(() => setChartHistory([]))
-      .finally(() => setChartLoading(false));
+      .then((data) => { setChartHistory(data); setChartLoading(false); })
+      .catch(() => { setChartHistory([]); setChartLoading(false); });
   }, [selectedId, chartPeriod]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const stock = stocks.find(s => s.id === selectedId);
+    if (!stock) return;
+    setInsight(null);
+    fetchInsight('stock', {
+      name: stock.name,
+      currentPrice: stock.currentPrice,
+      changePercent: stock.changePercent,
+      yearHigh: stock.yearHigh,
+      yearLow: stock.yearLow,
+    }).then(setInsight).catch(() => {});
+  }, [selectedId]);
 
   function handleRemove(id: string) {
     removeWatchlist(id);
@@ -221,10 +234,11 @@ export default function PortfolioPage() {
               )}
 
               {/* AI 코멘트 */}
-              {/* TODO: AI 서버 연결 */}
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
                 <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-300 mb-2">✨ AI 분석</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">추후 AI 분석 기능이 추가될 예정입니다.</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">
+                  {insight === null ? 'AI 분석 중...' : insight}
+                </p>
               </div>
 
             </div>

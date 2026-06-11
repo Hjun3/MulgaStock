@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { getStockDetail, getStockHistory } from '../api';
+import { getStockDetail, getStockHistory, fetchInsight } from '../api';
 import type { StockDetail, PriceHistory } from '../types';
 import {
   formatPrice,
@@ -26,13 +26,24 @@ export default function StockDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [insight, setInsight] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
+    setInsight(null);
     getStockDetail(stockId)
-      .then((data) => setStock(data))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        setStock(data);
+        setLoading(false);
+        fetchInsight('stock', {
+          name: data.name,
+          currentPrice: data.currentPrice,
+          changePercent: data.changePercent,
+          yearHigh: data.yearHigh,
+          yearLow: data.yearLow,
+        }).then(setInsight).catch(() => {});
+      })
+      .catch(() => { setError(true); setLoading(false); });
     setSaved(isInWatchlist(stockId));
   }, [stockId]);
 
@@ -150,9 +161,7 @@ export default function StockDetailPage() {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
         <h3 className="font-bold text-indigo-600 dark:text-indigo-300 mb-1">✨ AI 인사이트</h3>
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          {stock.name} 가격은 {stock.changePercent >= 0 ? '상승' : '하락'} 추세이며, 카테고리 평균보다{' '}
-          {stock.changePercent > stock.categoryAverageChangePercent ? '높은' : '낮은'} 변동률을 보이고
-          있습니다.
+          {insight === null ? 'AI 분석 중...' : insight}
         </p>
       </div>
     </div>
