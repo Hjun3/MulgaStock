@@ -12,6 +12,7 @@ public class KamisPeriodResponse {
 
     private List<Map<String, Object>> condition;
 
+    @JsonDeserialize(using = KamisDataDeserializer.class)
     private KamisData data;
 
     @Data
