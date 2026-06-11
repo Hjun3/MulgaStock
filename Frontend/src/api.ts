@@ -53,3 +53,13 @@ export function getStocksByCategory(category: string, size = 30) {
 export function getTopStocks(size = 10) {
   return get<Page<StockSummary>>('/stocks?sortBy=changePercent&direction=desc&size=' + size);
 }
+
+// 로그인 - 백엔드 연결 시 POST /auth/login 호출로 교체
+export async function login(_email: string, _password: string): Promise<void> {
+  // TODO: const res = await fetch(BASE_URL + '/auth/login', { method: 'POST', ... });
+}
+
+// 회원가입 - 백엔드 연결 시 POST /auth/register 호출로 교체
+export async function register(_email: string, _password: string): Promise<void> {
+  // TODO: const res = await fetch(BASE_URL + '/auth/register', { method: 'POST', ... });
+}
