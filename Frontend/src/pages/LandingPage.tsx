@@ -265,7 +265,7 @@ export function LandingPage() {
               일상 속 가격 변동,<br />주식처럼 한눈에
             </h1>
             <p className="mb-5 text-base leading-relaxed text-slate-700 dark:text-slate-300">
-              KAMIS · Opinet · ECOS 데이터를 기반으로 28종 품목 가격을 주기적으로 업데이트합니다.
+              KAMIS · Opinet · ECOS 데이터를 기반으로 20종 품목 가격을 주기적으로 업데이트합니다.
             </p>
             <Link to="/market" className="self-start rounded-lg bg-yellow-500 hover:bg-yellow-400 px-6 py-2.5 text-base font-bold text-white dark:text-slate-900 transition-colors">
               시장 보러 가기
@@ -282,7 +282,7 @@ export function LandingPage() {
           <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8">
             <div className="mb-4"><TrendingUp className="h-7 w-7 text-slate-600 dark:text-slate-300" /></div>
             <p className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">실시간 물가 추적</p>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">KAMIS · Opinet · ECOS API로 28종 품목 가격을 주기적으로 업데이트합니다.</p>
+            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">KAMIS · Opinet · ECOS API로 20종 품목 가격을 주기적으로 업데이트합니다.</p>
             <div className="mt-4">
               <ResponsiveContainer width="100%" height={110}>
                 <AreaChart data={MINI_CHART_DATA} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
