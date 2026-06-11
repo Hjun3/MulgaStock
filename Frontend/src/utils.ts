@@ -13,9 +13,9 @@ export function formatPercent(value: number) {
 
 // 한국 주식 관습: 오르면 빨강, 내리면 파랑 (다크 배경에서 잘 보이는 밝은 톤)
 export function changeColor(value: number) {
-  if (value > 0) return 'text-red-400';
-  if (value < 0) return 'text-blue-400';
-  return 'text-slate-400';
+  if (value > 0) return 'text-red-600 dark:text-red-400';
+  if (value < 0) return 'text-blue-600 dark:text-blue-400';
+  return 'text-slate-500 dark:text-slate-400';
 }
 
 // 그래프 막대 색상 (위와 동일한 규칙의 실제 색상값)

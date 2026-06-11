@@ -11,17 +11,15 @@ import {
   formatDateTime,
   getWatchlist,
 } from '../utils';
+import { useTheme } from '../context/ThemeContext';
 
-// 거시지표(CPI/PPI/환율/금리) 카테고리 이름 — 물가 종목 랭킹에서는 제외한다.
 const MACRO = '거시지표';
 
-// 한 종목의 가격 이력 묶음 (카테고리 지수 계산용)
 interface History {
   category: string;
   points: PriceHistory[];
 }
 
-// 그래프의 한 점
 interface IndexPoint {
   date: string;
   value: number;
@@ -29,34 +27,39 @@ interface IndexPoint {
 
 export default function HomePage() {
   const [market, setMarket] = useState<MarketSummary | null>(null);
-  const [cpi, setCpi] = useState<StockDetail | null>(null); // 소비자물가지수
-  const [cpiSeries, setCpiSeries] = useState<IndexPoint[]>([]); // CPI 월별 시계열
-  const [stocks, setStocks] = useState<StockSummary[]>([]); // 물가 종목들(거시지표 제외)
-  const [histories, setHistories] = useState<History[]>([]); // 식품/생필품/에너지 이력
+  const [cpi, setCpi] = useState<StockDetail | null>(null);
+  const [cpiSeries, setCpiSeries] = useState<IndexPoint[]>([]);
+  const [stocks, setStocks] = useState<StockSummary[]>([]);
+  const [histories, setHistories] = useState<History[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
   const [keyword, setKeyword] = useState('');
   const navigate = useNavigate();
+  const { theme } = useTheme();
+
+  const isDark = theme === 'dark';
+  const tickFill = isDark ? '#94a3b8' : '#475569';
+  const tickFillMuted = isDark ? '#64748b' : '#94a3b8';
+  const tooltipStyle = isDark
+    ? { background: '#1e293b', border: 'none', borderRadius: 8, color: '#e2e8f0' }
+    : { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#0f172a' };
+  const tooltipLabelStyle = isDark ? { color: '#94a3b8' } : { color: '#64748b' };
 
   useEffect(() => {
     Promise.all([
       getMarketSummary(),
       getTopStocks(200),
-      getStockDetail('cpi').catch(() => null), // CPI 없으면 null
+      getStockDetail('cpi').catch(() => null),
       getStockHistory('cpi', '1Y').catch(() => [] as PriceHistory[]),
     ])
       .then(([m, page, cpiDetail, cpiHist]) => {
         setMarket(m);
         setCpi(cpiDetail);
-        // CPI는 ×100 으로 저장돼 있어 100으로 나눠 실제 지수값으로
         setCpiSeries(cpiHist.map((p) => ({ date: p.date, value: p.close / 100 })));
 
-        // 거시지표를 뺀 실제 물가 종목들
         const products = page.content.filter((s) => s.category !== MACRO);
         setStocks(products);
 
-        // 식품/생필품/에너지 종목들의 이력만 모은다 (오른쪽 카테고리 그래프용)
         const members = products.filter((s) =>
           ['식품', '생필품', '에너지'].includes(s.category)
         );
@@ -73,7 +76,7 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  function handleSearch(e: React.FormEvent) {
+  function handleSearch(e: { preventDefault(): void }) {
     e.preventDefault();
     if (keyword.trim() !== '') {
       navigate('/search?q=' + encodeURIComponent(keyword.trim()));
@@ -81,11 +84,11 @@ export default function HomePage() {
   }
 
   if (loading) {
-    return <p className="text-center text-slate-400 py-20">불러오는 중...</p>;
+    return <p className="text-center text-slate-600 dark:text-slate-400 py-20">불러오는 중...</p>;
   }
   if (error || !market) {
     return (
-      <p className="text-center text-slate-400 py-20">
+      <p className="text-center text-slate-600 dark:text-slate-400 py-20">
         데이터를 불러오지 못했습니다. (백엔드 서버가 켜져 있는지 확인해주세요)
       </p>
     );
@@ -96,7 +99,6 @@ export default function HomePage() {
   const energy = stocks.filter((s) => s.category === '에너지');
   const top10 = stocks.slice(0, 10);
 
-  // CPI 지수값(예: 119.92)과 전월 대비 등락률
   const cpiIndex = cpi ? cpi.currentPrice / 100 : null;
   const cpiChange = cpi ? cpi.changePercent : 0;
 
@@ -108,7 +110,7 @@ export default function HomePage() {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="품목 검색 (예: 치약, 닭고기, 휘발유)"
-          className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+          className="flex-1 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
         />
         <button
           type="submit"
@@ -120,12 +122,11 @@ export default function HomePage() {
 
       {/* ===== 2행: 전체 물가지수(CPI, 좌) + 카테고리 시계열(우) ===== */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* 소비자물가지수 (CPI) — 한국은행 실데이터 */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-sm text-slate-400">소비자물가지수 (CPI · 2020=100)</p>
-              <p className="text-4xl font-bold text-slate-100">
+              <p className="text-sm text-slate-600 dark:text-slate-400">소비자물가지수 (CPI · 2020=100)</p>
+              <p className="text-4xl font-bold text-slate-900 dark:text-slate-100">
                 {cpiIndex !== null ? cpiIndex.toFixed(2) : '-'}
                 <span className={'text-lg font-bold ml-2 ' + changeColor(cpiChange)}>
                   {formatPercent(cpiChange)}
@@ -135,12 +136,11 @@ export default function HomePage() {
                 전월 대비 · 오늘 종목 상승 {market.gainersCount} · 하락 {market.losersCount}
               </p>
             </div>
-            <span className="text-xs bg-indigo-500/20 text-indigo-300 rounded-full px-2 py-0.5">
+            <span className="text-xs bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-full px-2 py-0.5">
               {formatDateTime(market.lastUpdated)} · 한국은행 ECOS
             </span>
           </div>
 
-          {/* CPI 월별 추이 (최근 1년) */}
           <div className="mt-3 flex-1">
             {cpiSeries.length === 0 ? (
               <p className="text-center text-slate-500 py-16 text-sm">CPI 데이터가 없습니다.</p>
@@ -149,22 +149,22 @@ export default function HomePage() {
                 <LineChart data={cpiSeries}>
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: '#94a3b8', fontSize: 11 }}
+                    tick={{ fill: tickFill, fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     minTickGap={30}
                     tickFormatter={(d: string) => d.slice(0, 7)}
                   />
                   <YAxis
-                    tick={{ fill: '#64748b', fontSize: 11 }}
+                    tick={{ fill: tickFillMuted, fontSize: 11 }}
                     domain={['auto', 'auto']}
                     width={44}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
-                    contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8, color: '#e2e8f0' }}
-                    labelStyle={{ color: '#94a3b8' }}
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
                     formatter={(v) => [Number(v).toFixed(2), 'CPI']}
                   />
                   <Line type="monotone" dataKey="value" stroke="#818cf8" dot={false} strokeWidth={2} />
@@ -173,14 +173,12 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* AI 코멘트 */}
-          <div className="mt-3 bg-slate-800/60 rounded-lg p-3">
-            <p className="text-xs font-semibold text-indigo-300 mb-1">✨ 오늘의 AI 시황</p>
-            <p className="text-sm text-slate-300">{makeAiComment(market)}</p>
+          <div className="mt-3 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg p-3">
+            <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-300 mb-1">✨ 오늘의 AI 시황</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">{makeAiComment(market)}</p>
           </div>
         </div>
 
-        {/* 카테고리별 시간 그래프 (오른쪽 세로 배치) */}
         <div className="flex flex-col gap-4">
           <MiniLine
             label="식품"
@@ -200,21 +198,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 3행 + 4행 왼쪽: 카테고리 랭킹 & TOP10 / 오른쪽: 관심목록 ===== */}
+      {/* ===== 3행 + 4행 ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
         <div className="space-y-6">
-          {/* 3행: 식품/생필품/에너지별 급등·급락 TOP3 */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CategoryRank label="식품" stocks={food} />
             <CategoryRank label="생필품" stocks={daily} />
             <CategoryRank label="에너지" stocks={energy} />
           </section>
 
-          {/* 4행: 전체 등락률 TOP 10 */}
           <Top10Table stocks={top10} />
         </div>
 
-        {/* 오른쪽: 관심목록 */}
         <aside className="lg:sticky lg:top-4 h-fit">
           <WatchlistSidebar />
         </aside>
@@ -223,14 +218,19 @@ export default function HomePage() {
   );
 }
 
-// ===================== 이 페이지 전용 작은 컴포넌트들 =====================
-
-// 카테고리별 시간 그래프 (작은 버전, 오른쪽 세로)
 function MiniLine(props: { label: string; avg: number; data: IndexPoint[] }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const tickFill = isDark ? '#94a3b8' : '#475569';
+  const tooltipStyle = isDark
+    ? { background: '#1e293b', border: 'none', borderRadius: 8, color: '#e2e8f0', fontSize: 12 }
+    : { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#0f172a', fontSize: 12 };
+  const strokeColor = isDark ? barColor(props.avg) : (props.avg > 0 ? '#dc2626' : props.avg < 0 ? '#2563eb' : '#64748b');
+
   return (
-    <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4">
+    <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
       <div className="flex items-baseline justify-between">
-        <span className="text-sm font-semibold text-slate-200">{props.label}</span>
+        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{props.label}</span>
         <span className={'text-lg font-bold ' + changeColor(props.avg)}>{formatPercent(props.avg)}</span>
       </div>
       <ResponsiveContainer width="100%" height={56}>
@@ -238,35 +238,34 @@ function MiniLine(props: { label: string; avg: number; data: IndexPoint[] }) {
           <XAxis dataKey="date" hide />
           <YAxis hide domain={['auto', 'auto']} />
           <Tooltip
-            contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8, color: '#e2e8f0', fontSize: 12 }}
-            labelStyle={{ color: '#94a3b8' }}
+            contentStyle={tooltipStyle}
+            labelStyle={{ color: tickFill }}
             formatter={(v) => [Number(v).toFixed(2), '지수']}
           />
-          <Line type="monotone" dataKey="value" stroke={barColor(props.avg)} dot={false} strokeWidth={1.5} />
+          <Line type="monotone" dataKey="value" stroke={strokeColor} dot={false} strokeWidth={1.5} />
         </LineChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-// 카테고리별 급등/급락 TOP3 카드
 function CategoryRank({ label, stocks }: { label: string; stocks: StockSummary[] }) {
   const sorted = [...stocks].sort((a, b) => b.changePercent - a.changePercent);
   const gainers = sorted.slice(0, 3);
   const losers = sorted.slice(-3).reverse();
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h3 className="font-bold text-slate-100 mb-3">{label}</h3>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+      <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">{label}</h3>
 
-      <p className="text-xs text-red-400 mb-1">▲ 급등 TOP 3</p>
+      <p className="text-xs text-red-500 dark:text-red-400 mb-1">▲ 급등 TOP 3</p>
       <ul className="space-y-1 mb-3">
         {gainers.map((s) => (
           <RankRow key={s.id} stock={s} />
         ))}
       </ul>
 
-      <p className="text-xs text-blue-400 mb-1">▼ 급락 TOP 3</p>
+      <p className="text-xs text-blue-500 dark:text-blue-400 mb-1">▼ 급락 TOP 3</p>
       <ul className="space-y-1">
         {losers.map((s) => (
           <RankRow key={s.id} stock={s} />
@@ -276,15 +275,14 @@ function CategoryRank({ label, stocks }: { label: string; stocks: StockSummary[]
   );
 }
 
-// 랭킹 한 줄
 function RankRow({ stock }: { stock: StockSummary }) {
   return (
     <li>
       <Link
         to={'/stocks/' + stock.id}
-        className="flex items-center justify-between text-sm hover:bg-slate-800 rounded px-1 py-0.5"
+        className="flex items-center justify-between text-sm hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 py-0.5"
       >
-        <span className="text-slate-300 truncate">{stock.name}</span>
+        <span className="text-slate-700 dark:text-slate-300 truncate">{stock.name}</span>
         <span className={'font-medium ' + changeColor(stock.changePercent)}>
           {formatPercent(stock.changePercent)}
         </span>
@@ -293,14 +291,13 @@ function RankRow({ stock }: { stock: StockSummary }) {
   );
 }
 
-// 전체 등락률 TOP 10 표
 function Top10Table({ stocks }: { stocks: StockSummary[] }) {
   return (
-    <section className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h2 className="font-bold text-slate-100 mb-3">전체 등락률 TOP 10</h2>
+    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+      <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-3">전체 등락률 TOP 10</h2>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-slate-500 text-xs text-left border-b border-slate-800">
+          <tr className="text-slate-500 text-xs text-left border-b border-slate-200 dark:border-slate-800">
             <th className="py-2 w-8">#</th>
             <th className="py-2">종목</th>
             <th className="py-2">분류</th>
@@ -310,15 +307,15 @@ function Top10Table({ stocks }: { stocks: StockSummary[] }) {
         </thead>
         <tbody>
           {stocks.map((s, i) => (
-            <tr key={s.id} className="border-b border-slate-800/60 hover:bg-slate-800/50">
+            <tr key={s.id} className="border-b border-slate-200/60 dark:border-slate-800/60 hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
               <td className="py-2 text-slate-500">{i + 1}</td>
               <td className="py-2">
-                <Link to={'/stocks/' + s.id} className="text-slate-100 hover:text-indigo-300">
+                <Link to={'/stocks/' + s.id} className="text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-300">
                   {s.name} <span className="text-slate-500 text-xs">{s.unit}</span>
                 </Link>
               </td>
-              <td className="py-2 text-slate-400">{s.category}</td>
-              <td className="py-2 text-right text-slate-200">{formatPrice(s.currentPrice)}</td>
+              <td className="py-2 text-slate-600 dark:text-slate-400">{s.category}</td>
+              <td className="py-2 text-right text-slate-800 dark:text-slate-200">{formatPrice(s.currentPrice)}</td>
               <td className={'py-2 text-right font-medium ' + changeColor(s.changePercent)}>
                 {formatPercent(s.changePercent)}
               </td>
@@ -330,7 +327,6 @@ function Top10Table({ stocks }: { stocks: StockSummary[] }) {
   );
 }
 
-// 오른쪽 관심목록
 function WatchlistSidebar() {
   const [items, setItems] = useState<StockDetail[]>([]);
 
@@ -343,8 +339,8 @@ function WatchlistSidebar() {
   }, []);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h3 className="font-bold text-slate-100 mb-3">⭐ 관심 목록</h3>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+      <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">⭐ 관심 목록</h3>
 
       {items.length === 0 ? (
         <p className="text-sm text-slate-500">
@@ -358,10 +354,10 @@ function WatchlistSidebar() {
             <li key={s.id}>
               <Link
                 to={'/stocks/' + s.id}
-                className="flex items-center justify-between hover:bg-slate-800 rounded px-1 py-1"
+                className="flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 py-1"
               >
                 <div className="min-w-0">
-                  <p className="text-sm text-slate-200 truncate">{s.name}</p>
+                  <p className="text-sm text-slate-800 dark:text-slate-200 truncate">{s.name}</p>
                   <p className="text-xs text-slate-500">{formatPrice(s.currentPrice)}</p>
                 </div>
                 <span className={'text-sm font-medium ' + changeColor(s.changePercent)}>
@@ -375,7 +371,7 @@ function WatchlistSidebar() {
 
       <Link
         to="/portfolio"
-        className="block mt-3 text-center text-xs text-indigo-300 hover:text-indigo-200"
+        className="block mt-3 text-center text-xs text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200"
       >
         포트폴리오 전체 보기 →
       </Link>
@@ -383,10 +379,6 @@ function WatchlistSidebar() {
   );
 }
 
-// ===================== 계산 함수들 =====================
-
-// 여러 종목의 가격 이력을 "기준=100" 지수 시계열로 합친다. (카테고리 그래프용)
-// 종목마다 가격대가 다르므로 첫날 대비 비율로 정규화한 뒤 평균낸다.
 function buildIndex(histories: History[], filter: (h: History) => boolean): IndexPoint[] {
   const selected = histories.filter(filter);
   const byDate = new Map<string, { sum: number; count: number }>();
@@ -410,13 +402,11 @@ function buildIndex(histories: History[], filter: (h: History) => boolean): Inde
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// market.sectors 에서 카테고리 평균 등락률 찾기
 function sectorAvg(market: MarketSummary, displayName: string) {
   const s = market.sectors.find((x) => x.displayName === displayName);
   return s ? s.averageChangePercent : 0;
 }
 
-// AI 시황 한 줄
 function makeAiComment(market: MarketSummary) {
   const sectors = market.sectors.filter((s) => s.stockCount > 0 && s.displayName !== MACRO);
   if (sectors.length === 0) return '오늘의 시장 데이터를 정리하고 있습니다.';
