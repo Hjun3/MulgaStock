@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getStockDetail, getStockHistory, fetchInsight } from '../api';
 import type { StockDetail, PriceHistory } from '../types';
@@ -18,6 +18,7 @@ const PERIODS = ['1W', '1M', '3M', '1Y'];
 export default function StockDetailPage() {
   const { id } = useParams();
   const stockId = id ?? '';
+  const navigate = useNavigate();
   const { theme } = useTheme();
 
   const [stock, setStock] = useState<StockDetail | null>(null);
@@ -87,9 +88,9 @@ export default function StockDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <Link to="/" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+      <button onClick={() => navigate(-1)} className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
         ← 뒤로
-      </Link>
+      </button>
 
       <div className="flex items-start justify-between">
         <div>

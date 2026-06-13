@@ -144,7 +144,7 @@ function MoverRow({ stock }: { stock: StockSummary }) {
   const changeAmt = Math.round(stock.currentPrice * stock.changePercent / (100 + stock.changePercent));
   const sign = changeAmt >= 0 ? '+' : '';
   return (
-    <Link to={`/stocks/${stock.id}`} className="flex items-center justify-between py-2 text-base hover:opacity-80">
+    <Link to={`/stocks/${stock.id}`} className="flex items-center justify-between rounded-md py-2 px-2 -mx-2 text-base transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
       <span className="text-slate-900 dark:text-slate-100">{stock.name}</span>
       <span className={`flex items-center font-semibold ${changeColor(stock.changePercent)}`}>
         <span className="w-16 text-right">{sign}{formatPrice(Math.abs(changeAmt))}</span>
@@ -278,8 +278,8 @@ export function LandingPage() {
       {/* 피처 카드 3개 */}
       <section className="border-b border-slate-200 dark:border-slate-800 py-12">
         <div className="mx-auto flex max-w-7xl gap-4 px-6 lg:px-10">
-          {/* 실시간 물가 추적 — hover 없음, 정적 차트 */}
-          <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8">
+          {/* 실시간 물가 추적 */}
+          <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-slate-100 hover:shadow-lg dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:shadow-slate-900/60">
             <div className="mb-4"><TrendingUp className="h-7 w-7 text-slate-600 dark:text-slate-300" /></div>
             <p className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">실시간 물가 추적</p>
             <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">KAMIS · Opinet · ECOS API로 20종 품목 가격을 주기적으로 업데이트합니다.</p>
@@ -303,7 +303,7 @@ export function LandingPage() {
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900" style={{ animationDelay: '0.15s' }}>
+          <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-slate-100 hover:shadow-lg dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:shadow-slate-900/60" style={{ animationDelay: '0.15s' }}>
             <div className="mb-4"><Bot className="h-7 w-7 text-slate-600 dark:text-slate-300" /></div>
             <p className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">AI 시황 분석</p>
             <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">오늘의 물가 흐름을 AI가 주식 시황처럼 자동으로 요약해 제공합니다.</p>
@@ -312,7 +312,7 @@ export function LandingPage() {
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{MINI_AI_TEXT}</p>
             </div>
           </div>
-          <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900" style={{ animationDelay: '0.3s' }}>
+          <div className="fade-in-up flex-1 rounded-xl border border-slate-200 dark:border-slate-800 p-8 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-slate-100 hover:shadow-lg dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:shadow-slate-900/60" style={{ animationDelay: '0.3s' }}>
             <div className="mb-4"><Star className="h-7 w-7 text-slate-600 dark:text-slate-300" /></div>
             <p className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">포트폴리오 관리</p>
             <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">관심 품목을 즐겨찾기하고 나만의 생활물가 포트폴리오를 구성하세요.</p>
